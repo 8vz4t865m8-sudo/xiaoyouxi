@@ -34,12 +34,19 @@ jobs:
           echo "--- Build 完成 ---"
           ls -la build/DerivedData/Build/Products/Release-iphoneos/
 
-      - name: ad-hoc 预签名（给二进制补全签名结构）
+      - name: 清理扩展属性并预签名
         working-directory: ios
         run: |
           set -euxo pipefail
           APP="build/DerivedData/Build/Products/Release-iphoneos/BubbleTeaTycoon.app"
-          codesign --force --deep --sign - "$APP"
+
+          # 清理可能导致重签名后校验失败的扩展属性（如 com.apple.provenance 等）
+          xattr -cr "$APP"
+
+          # 只签可执行文件本身，不加 --deep，避免把 Resources 目录下的
+          # 图片/js/css 也当作待签名内容处理，导致轻松签重签时资源哈希对不上
+          codesign --force --sign - "$APP"
+
           echo "--- 签名完成 ---"
           codesign -dv "$APP" 2>&1 | head -5
           echo "--- 签名结构验证通过 ---"
@@ -50,8 +57,9 @@ jobs:
           set -euxo pipefail
           mkdir -p build/Payload
           cp -R build/DerivedData/Build/Products/Release-iphoneos/BubbleTeaTycoon.app build/Payload/
+          xattr -cr build/Payload/BubbleTeaTycoon.app
           cd build
-          zip -r BubbleTeaTycoon.ipa Payload/
+          zip -rX BubbleTeaTycoon.ipa Payload/
           echo "--- IPA 构建完成 ---"
           ls -la *.ipa
 
