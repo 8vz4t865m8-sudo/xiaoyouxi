@@ -30,7 +30,7 @@ jobs:
           key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
           restore-keys: ${{ runner.os }}-pods-
 
-      - name: 构建 IPA
+      - name: 构建 App
         working-directory: ios
         run: |
           set -euxo pipefail
@@ -39,22 +39,22 @@ jobs:
             -scheme BubbleTeaTycoon \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            -archivePath build/BubbleTeaTycoon.xcarchive \
+            -derivedDataPath build/DerivedData \
             PRODUCT_BUNDLE_IDENTIFIER=com.bubbleteatycoon.app \
             PRODUCT_NAME=BubbleTeaTycoon \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            archive
-          echo "--- Archive 完成 ---"
-          ls -la build/
+            build
+          echo "--- Build 完成 ---"
+          ls -la build/DerivedData/Build/Products/Release-iphoneos/
 
       - name: 导出 IPA
         working-directory: ios
         run: |
           set -euxo pipefail
           mkdir -p build/Payload
-          cp -R build/BubbleTeaTycoon.xcarchive/Products/Applications/BubbleTeaTycoon.app build/Payload/
+          cp -R build/DerivedData/Build/Products/Release-iphoneos/BubbleTeaTycoon.app build/Payload/
           cd build
           zip -r BubbleTeaTycoon.ipa Payload/
           echo "--- IPA 构建完成 ---"
