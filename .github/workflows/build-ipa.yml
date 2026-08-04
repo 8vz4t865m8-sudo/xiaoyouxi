@@ -1,0 +1,67 @@
+name: 构建 IPA
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:    # 允许手动触发
+
+jobs:
+  build-ipa:
+    name: 编译 IPA
+    runs-on: macos-14    # GitHub Actions 的 macOS runner，内置 Xcode 15+
+    timeout-minutes: 30
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 选择 Xcode 版本
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: 缓存 CocoaPods (备用)
+        uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: ${{ runner.os }}-pods-
+
+      - name: 构建 IPA
+        working-directory: ios
+        run: |
+          set -euxo pipefail
+          xcodebuild \
+            -project BubbleTeaTycoon.xcodeproj \
+            -scheme BubbleTeaTycoon \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/BubbleTeaTycoon.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            archive
+          echo "--- Archive 完成 ---"
+          ls -la build/
+
+      - name: 导出 IPA
+        working-directory: ios
+        run: |
+          set -euxo pipefail
+          mkdir -p build/Payload
+          cp -R build/BubbleTeaTycoon.xcarchive/Products/Applications/BubbleTeaTycoon.app build/Payload/
+          cd build
+          zip -r BubbleTeaTycoon.ipa Payload/
+          echo "--- IPA 构建完成 ---"
+          ls -la *.ipa
+
+      - name: 上传 IPA 作为产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: BubbleTeaTycoon-IPA
+          path: ios/build/BubbleTeaTycoon.ipa
+          if-no-files-found: error
+          retention-days: 30
