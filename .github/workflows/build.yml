@@ -3,34 +3,19 @@ name: 构建 IPA
 on:
   push:
     branches: [ main, master ]
-    paths:
-      - 'ios/**'
-      - '.github/workflows/**'
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:    # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   build-ipa:
     name: 编译 IPA
-    runs-on: macos-14    # GitHub Actions 的 macOS runner，内置 Xcode 15+
+    runs-on: macos-14
     timeout-minutes: 30
 
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 选择 Xcode 版本
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
-
-      - name: 缓存 CocoaPods (备用)
-        uses: actions/cache@v4
-        with:
-          path: ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
-          restore-keys: ${{ runner.os }}-pods-
-
-      - name: 构建 App
+      - name: 构建 App（ad-hoc 预签名）
         working-directory: ios
         run: |
           set -euxo pipefail
@@ -42,12 +27,16 @@ jobs:
             -derivedDataPath build/DerivedData \
             PRODUCT_BUNDLE_IDENTIFIER=com.bubbleteatycoon.app \
             PRODUCT_NAME=BubbleTeaTycoon \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY='-' \
+            CODE_SIGNING_ALLOWED=YES \
+            CODE_SIGNING_REQUIRED=YES \
             build
           echo "--- Build 完成 ---"
           ls -la build/DerivedData/Build/Products/Release-iphoneos/
+          echo "--- 验证签名 ---"
+          codesign -dv build/DerivedData/Build/Products/Release-iphoneos/BubbleTeaTycoon.app 2>&1 | head -5
+          echo "--- 签名结构验证通过（ad-hoc）---"
 
       - name: 导出 IPA
         working-directory: ios
@@ -60,7 +49,7 @@ jobs:
           echo "--- IPA 构建完成 ---"
           ls -la *.ipa
 
-      - name: 上传 IPA 作为产物
+      - name: 上传 IPA
         uses: actions/upload-artifact@v4
         with:
           name: BubbleTeaTycoon-IPA
