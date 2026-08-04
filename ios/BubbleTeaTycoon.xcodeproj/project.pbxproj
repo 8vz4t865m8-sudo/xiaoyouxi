@@ -1,5 +1,4 @@
-// !$*UTF8*$!
-{
+
 	archiveVersion = 1;
 	classes = {
 	};
@@ -187,7 +186,6 @@
 			INFOPLIST_FILE = "BubbleTeaTycoon/Info.plist";
 			INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 			INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-			INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 			LD_RUNPATH_SEARCH_PATHS = (
 				"$(inherited)",
 				"@executable_path/Frameworks",
@@ -216,7 +214,6 @@
 			INFOPLIST_FILE = "BubbleTeaTycoon/Info.plist";
 			INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 			INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-			INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 			LD_RUNPATH_SEARCH_PATHS = (
 				"$(inherited)",
 				"@executable_path/Frameworks",
