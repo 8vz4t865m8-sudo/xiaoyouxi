@@ -34,22 +34,18 @@ jobs:
           echo "--- Build 完成 ---"
           ls -la build/DerivedData/Build/Products/Release-iphoneos/
 
-      - name: 清理扩展属性并预签名
+      - name: 清理扩展属性（不做预签名，交给轻松签从零签名）
         working-directory: ios
         run: |
           set -euxo pipefail
           APP="build/DerivedData/Build/Products/Release-iphoneos/BubbleTeaTycoon.app"
 
-          # 清理可能导致重签名后校验失败的扩展属性（如 com.apple.provenance 等）
+          # 只清理扩展属性，不做 codesign。CODE_SIGNING_ALLOWED=NO 编译出的
+          # .app 本身没有完整签名结构，用 codesign 强行补签容易和 asset
+          # catalog 编译产物（如 AppIcon60x60@2x.png）的属性冲突报错。
+          # 裸 .app 直接打包成 IPA，交给轻松签做完整的从零签名即可。
           xattr -cr "$APP"
-
-          # 只签可执行文件本身，不加 --deep，避免把 Resources 目录下的
-          # 图片/js/css 也当作待签名内容处理，导致轻松签重签时资源哈希对不上
-          codesign --force --sign - "$APP"
-
-          echo "--- 签名完成 ---"
-          codesign -dv "$APP" 2>&1 | head -5
-          echo "--- 签名结构验证通过 ---"
+          echo "--- 清理完成 ---"
 
       - name: 导出 IPA
         working-directory: ios
