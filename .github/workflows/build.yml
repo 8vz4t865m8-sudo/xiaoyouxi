@@ -30,9 +30,12 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            DONT_RUN_SWIFT_STDLIB_TOOL=YES \
             build
           echo "--- Build 完成 ---"
           ls -la build/DerivedData/Build/Products/Release-iphoneos/
+          echo "--- 确认 Frameworks 目录（应为空或不存在，说明没有多余的未签名 dylib）---"
+          ls -la build/DerivedData/Build/Products/Release-iphoneos/BubbleTeaTycoon.app/Frameworks/ 2>&1 || echo "Frameworks 目录不存在，符合预期"
 
       - name: 清理扩展属性（不做预签名，交给轻松签从零签名）
         working-directory: ios
