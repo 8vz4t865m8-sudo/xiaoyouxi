@@ -15,7 +15,7 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 构建 App（ad-hoc 预签名）
+      - name: 构建 App
         working-directory: ios
         run: |
           set -euxo pipefail
@@ -27,16 +27,22 @@ jobs:
             -derivedDataPath build/DerivedData \
             PRODUCT_BUNDLE_IDENTIFIER=com.bubbleteatycoon.app \
             PRODUCT_NAME=BubbleTeaTycoon \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY='-' \
-            CODE_SIGNING_ALLOWED=YES \
-            CODE_SIGNING_REQUIRED=YES \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
             build
           echo "--- Build 完成 ---"
           ls -la build/DerivedData/Build/Products/Release-iphoneos/
-          echo "--- 验证签名 ---"
-          codesign -dv build/DerivedData/Build/Products/Release-iphoneos/BubbleTeaTycoon.app 2>&1 | head -5
-          echo "--- 签名结构验证通过（ad-hoc）---"
+
+      - name: ad-hoc 预签名（给二进制补全签名结构）
+        working-directory: ios
+        run: |
+          set -euxo pipefail
+          APP="build/DerivedData/Build/Products/Release-iphoneos/BubbleTeaTycoon.app"
+          codesign --force --deep --sign - "$APP"
+          echo "--- 签名完成 ---"
+          codesign -dv "$APP" 2>&1 | head -5
+          echo "--- 签名结构验证通过 ---"
 
       - name: 导出 IPA
         working-directory: ios
