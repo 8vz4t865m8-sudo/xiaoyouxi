@@ -11,10 +11,8 @@ class ViewController: UIViewController, WKNavigationDelegate {
 
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
-        // 默认 WKWebsiteDataStore 是 persistent，localStorage 会持久化
-        let prefs = WKWebpagePreferences()
-        prefs.allowsContentJavaScript = true
-        config.defaultWebpagePreferences = prefs
+        // 注意：WKWebView 默认允许 JavaScript，无需额外配置（WKWebpagePreferences 需 iOS 13+，
+        // 为兼容 iOS 12 已移除，不影响功能）
 
         webView = WKWebView(frame: view.bounds, configuration: config)
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
