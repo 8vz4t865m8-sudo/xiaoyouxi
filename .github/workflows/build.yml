@@ -15,57 +15,15 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 构建 App
-        working-directory: ios
+      - name: 构建 App（手工编译，不走 xcodebuild）
         run: |
-          set -euxo pipefail
-          xcodebuild \
-            -project BubbleTeaTycoon.xcodeproj \
-            -scheme BubbleTeaTycoon \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath build/DerivedData \
-            PRODUCT_BUNDLE_IDENTIFIER=com.bubbleteatycoon.app \
-            PRODUCT_NAME=BubbleTeaTycoon \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            DONT_RUN_SWIFT_STDLIB_TOOL=YES \
-            build
-          echo "--- Build 完成 ---"
-          ls -la build/DerivedData/Build/Products/Release-iphoneos/
-          echo "--- 确认 Frameworks 目录（应为空或不存在，说明没有多余的未签名 dylib）---"
-          ls -la build/DerivedData/Build/Products/Release-iphoneos/BubbleTeaTycoon.app/Frameworks/ 2>&1 || echo "Frameworks 目录不存在，符合预期"
-
-      - name: 清理扩展属性（不做预签名，交给轻松签从零签名）
-        working-directory: ios
-        run: |
-          set -euxo pipefail
-          APP="build/DerivedData/Build/Products/Release-iphoneos/BubbleTeaTycoon.app"
-
-          # 只清理扩展属性，不做 codesign。CODE_SIGNING_ALLOWED=NO 编译出的
-          # .app 本身没有完整签名结构，用 codesign 强行补签容易和 asset
-          # catalog 编译产物（如 AppIcon60x60@2x.png）的属性冲突报错。
-          # 裸 .app 直接打包成 IPA，交给轻松签做完整的从零签名即可。
-          xattr -cr "$APP"
-          echo "--- 清理完成 ---"
-
-      - name: 导出 IPA
-        working-directory: ios
-        run: |
-          set -euxo pipefail
-          mkdir -p build/Payload
-          cp -R build/DerivedData/Build/Products/Release-iphoneos/BubbleTeaTycoon.app build/Payload/
-          xattr -cr build/Payload/BubbleTeaTycoon.app
-          cd build
-          zip -rX BubbleTeaTycoon.ipa Payload/
-          echo "--- IPA 构建完成 ---"
-          ls -la *.ipa
+          chmod +x build.sh
+          ./build.sh
 
       - name: 上传 IPA
         uses: actions/upload-artifact@v4
         with:
           name: BubbleTeaTycoon-IPA
-          path: ios/build/BubbleTeaTycoon.ipa
+          path: build/BubbleTeaTycoon.ipa
           if-no-files-found: error
           retention-days: 30
